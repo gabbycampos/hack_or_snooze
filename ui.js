@@ -25,6 +25,8 @@ $(async function() {
 
   await checkIfLoggedIn();
 
+  //this.favorites.push(new Story(response.data));
+
   /**
    * Event listener for logging in.
    *  If successfully we will setup the user instance
@@ -33,16 +35,20 @@ $(async function() {
   $loginForm.on("submit", async function(evt) {
     evt.preventDefault(); // no page-refresh on submit
 
-    // grab the username and password
-    const username = $("#login-username").val();
-    const password = $("#login-password").val();
-
-    // call the login static method to build a user instance
-    const userInstance = await User.login(username, password);
-    // set the global user to the user instance
-    currentUser = userInstance;
-    syncCurrentUserToLocalStorage();
-    loginAndSubmitForm();
+    try {
+      // grab the username and password
+      const username = $("#login-username").val();
+      const password = $("#login-password").val();
+  
+      // call the login static method to build a user instance
+      const userInstance = await User.login(username, password);
+      // set the global user to the user instance
+      currentUser = userInstance;
+      syncCurrentUserToLocalStorage();
+      loginAndSubmitForm();
+    } catch(err) {
+      alert('Please try again!')
+    }
   });
 
   /**
@@ -96,7 +102,7 @@ $(async function() {
       $userProfile,
       $favoriteArticles,
       $submitForm,
-      $editProfileForm,
+      $editProfileForm
     ]);
     await generateStories();
     $allStoriesList.show();
@@ -202,11 +208,13 @@ $(async function() {
       $filteredArticles,
       $ownStories,
       $loginForm,
-      $createAccountForm
+      $createAccountForm,
+      $favoriteArticles
     ];
     elementsArr.forEach($elem => $elem.hide());
   }
 
+  // Nav for logged in user
   function showNavForLoggedInUser() {
     $navLogin.hide();
     $navLogOut.show();
@@ -216,7 +224,7 @@ $(async function() {
 
   }
 
-  /* simple function to pull the hostname from a URL */
+  /* function to pull the hostname from a URL */
 
   function getHostName(url) {
     let hostName;
@@ -281,22 +289,7 @@ $(async function() {
     currentUser = await getCurrentUser();
     await generateStories();
   });
-
-  // Event handler for Navigation to Favorites page 
-  $("#nav-favorites").on("click", async function(e) {
-    e.preventDefault();
-    hideElements([
-      $userProfile,
-      $submitForm,
-      $allStoriesList,
-      $ownStories,
-      $editProfileForm,
-    ]);
-    const h5 = $favoriteArticles.find("h5");
-    const listItems = $favoriteArticles.find("li");
-    filterStories(h5, listItems, $favoriteArticles, currentUser.favorites);
-  });
-
+  
   /* Event handler for Navigation to My Stories page */
   $("#nav-my-stories").on("click", async (e) => {
     e.preventDefault();
@@ -310,6 +303,21 @@ $(async function() {
     const h5 = $ownStories.find("h5");
     const listItems = $ownStories.find("li");
     filterStories(h5, listItems, $ownStories, currentUser.ownStories);
+  });
+  
+  // Event handler for Navigation to Favorites page 
+  $("#nav-favorites").on("click", async function(e) {
+    e.preventDefault();
+    hideElements([
+      $userProfile,
+      $submitForm,
+      $allStoriesList,
+      $ownStories,
+      $editProfileForm,
+    ]);
+    const h5 = $favoriteArticles.find("h5");
+    const listItems = $favoriteArticles.find("li");
+    filterStories(h5, listItems, $favoriteArticles, currentUser.favorites);
   });
 
   /* Filter $favoriteArticles & $ownStories */
@@ -358,7 +366,7 @@ $(async function() {
       e.target.classList.add("fas");
     }
   };
-
+  
   /* User removes a favorite story */
   const uncheckFavorite = async (e) => {
     const removed = await User.removeFavorite(
@@ -380,9 +388,7 @@ $(async function() {
   /* Check if story is a user's favorite */
   function checkIfUserFavorite(storyId) {
     return currentUser &&
-      currentUser.favorites.find((fav) => fav.storyId == storyId)
-      ? true
-      : false;
+      currentUser.favorites.find((fav) => fav.storyId == storyId) ? true : false;
   }
 
   /* Delete user's own story */
